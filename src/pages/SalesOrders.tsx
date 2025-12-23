@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, Calendar, Receipt, Plus, Edit, Trash2, Eye, X, Printer, Share, Download } from "lucide-react";
-import { getSales, getCustomers, getSaleItemsWithProducts, createSale, updateSale, deleteSale, Customer, Sale, Product, getProducts, createSaleItem } from "@/services/databaseService";
+import { getSales, getCustomers, getSaleItemsWithProducts, createSale, updateSale, deleteSale, Customer, Sale, Product, getProducts, createSaleItem, createCustomer } from "@/services/databaseService";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currency";
 
@@ -59,7 +59,74 @@ export const SalesOrders = ({ username, onBack, onLogout }: { username: string; 
 
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string; price: number }[]>([]);
-
+  
+  // State for new customer form
+  const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
+  });
+  
+  // Function to create a new customer
+  const createNewCustomer = async () => {
+    if (!newCustomer.firstName || !newCustomer.lastName) {
+      toast({
+        title: "Error",
+        description: "First name and last name are required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const newCustomerData = {
+        first_name: newCustomer.firstName,
+        last_name: newCustomer.lastName,
+        email: newCustomer.email || null,
+        phone: newCustomer.phone || null,
+      };
+      
+      const createdCustomer = await createCustomer(newCustomerData);
+      
+      if (!createdCustomer) {
+        throw new Error('Failed to create customer');
+      }
+      
+      // Add the new customer to the customers list
+      const newCustomerFormatted = {
+        id: createdCustomer.id,
+        name: `${createdCustomer.first_name} ${createdCustomer.last_name}`
+      };
+      
+      setCustomers(prev => [...prev, newCustomerFormatted]);
+      
+      // Select the new customer
+      if (viewingSO) return; // Do nothing in view mode
+      else if (editingSO) 
+        setEditingSO({...editingSO, customerId: createdCustomer.id, customerName: newCustomerFormatted.name});
+      else 
+        setNewSO({...newSO, customerId: createdCustomer.id, customerName: newCustomerFormatted.name});
+      
+      // Reset form and hide
+      setNewCustomer({ firstName: '', lastName: '', email: '', phone: '' });
+      setShowNewCustomerForm(false);
+      
+      toast({
+        title: "Success",
+        description: "Customer created successfully"
+      });
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create customer: " + (error as Error).message,
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Function to download sales order as text file
   const downloadSalesOrder = (order: SalesOrder | null) => {
     if (!order) {
@@ -750,6 +817,13 @@ export const SalesOrders = ({ username, onBack, onLogout }: { username: string; 
   };
 
   const handleCustomerChange = (customerId: string) => {
+    if (customerId === 'new') {
+      // Show new customer form when 'Add New Customer' is selected
+      if (viewingSO) return; // Do nothing in view mode
+      setShowNewCustomerForm(true);
+      return;
+    }
+    
     const customer = customers.find(c => c.id === customerId);
     if (customer) {
       if (viewingSO) return; // Do nothing in view mode
@@ -843,23 +917,100 @@ export const SalesOrders = ({ username, onBack, onLogout }: { username: string; 
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label htmlFor="customer">Customer *</Label>
-                    <Select
-                      value={viewingSO ? viewingSO.customerId : (editingSO ? editingSO.customerId : newSO.customerId)}
-                      onValueChange={handleCustomerChange}
-                      disabled={!!viewingSO} // Disable in view mode
-                    >
-                      <SelectTrigger id="customer">
-                        <SelectValue placeholder="Select customer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                        {customers.map(customer => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name}
+                    <div className="flex gap-2">
+                      <Select
+                        value={showNewCustomerForm ? 'new' : (viewingSO ? viewingSO.customerId : (editingSO ? editingSO.customerId : newSO.customerId))}
+                        onValueChange={handleCustomerChange}
+                        disabled={!!viewingSO || showNewCustomerForm} // Disable in view mode or when new customer form is shown
+                      >
+                        <SelectTrigger id="customer">
+                          <SelectValue placeholder="Select customer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="walk-in">Walk-in Customer</SelectItem>
+                          {customers.map(customer => (
+                            <SelectItem key={customer.id} value={customer.id}>
+                              {customer.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="new" className="font-bold">
+                            + Add New Customer
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          if (viewingSO) return; // Do nothing in view mode
+                          setShowNewCustomerForm(true);
+                        }}
+                        disabled={!!viewingSO}
+                      >
+                        Add New
+                      </Button>
+                    </div>
+                    
+                    {/* New Customer Form */}
+                    {showNewCustomerForm && (
+                      <div className="border rounded-lg p-4 mt-4">
+                        <h3 className="font-medium mb-3">Add New Customer</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="firstName">First Name *</Label>
+                            <Input
+                              id="firstName"
+                              value={newCustomer.firstName}
+                              onChange={(e) => setNewCustomer({...newCustomer, firstName: e.target.value})}
+                              placeholder="Enter first name"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="lastName">Last Name *</Label>
+                            <Input
+                              id="lastName"
+                              value={newCustomer.lastName}
+                              onChange={(e) => setNewCustomer({...newCustomer, lastName: e.target.value})}
+                              placeholder="Enter last name"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={newCustomer.email}
+                              onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                              placeholder="Enter email"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="phone">Phone</Label>
+                            <Input
+                              id="phone"
+                              value={newCustomer.phone}
+                              onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                              placeholder="Enter phone"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button type="button" onClick={createNewCustomer}>
+                            Create Customer
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setShowNewCustomerForm(false);
+                              setNewCustomer({ firstName: '', lastName: '', email: '', phone: '' });
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
