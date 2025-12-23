@@ -62,151 +62,301 @@ export const SalesOrders = ({ username, onBack, onLogout }: { username: string; 
 
   // Function to download sales order as text file
   const downloadSalesOrder = (order: SalesOrder | null) => {
-    if (!order) return;
+    if (!order) {
+      console.error('No order provided to downloadSalesOrder');
+      return;
+    }
       
-    import('jspdf').then((jsPDF) => {
-      import('jspdf-autotable').then(() => {
-        const doc = new jsPDF.jsPDF();
-          
-        // Add title
-        doc.setFontSize(18);
-        doc.text('SALES ORDER', 105, 20, null, null, 'center');
-          
-        // Add order details
-        doc.setFontSize(12);
-        doc.text(`Order Number: ${order.orderNumber}`, 20, 40);
-        doc.text(`Customer: ${order.customerName}`, 20, 50);
-        doc.text(`Order Date: ${order.orderDate}`, 20, 60);
-        doc.text(`Status: ${order.status}`, 20, 70);
-          
-        // Calculate totals - handle case where items might be undefined
-        const itemsToUse = order.items || [];
-        const subtotal = itemsToUse.reduce((sum, item) => sum + (item.total || 0), 0);
-        const tax = subtotal * 0.18; // 18% tax
-        const total = subtotal + tax;
-          
-        // Add items table
-        (doc as any).autoTable({
-          startY: 80,
-          head: [['Product', 'Quantity', 'Unit Price', 'Total']],
-          body: itemsToUse.map(item => [
-            item.productName || 'N/A',
-            (item.quantity || 0).toString(),
-            formatCurrency(item.unitPrice || 0),
-            formatCurrency(item.total || 0)
-          ]),
-          styles: {
-            fontSize: 10,
-          },
-          headStyles: {
-            fillColor: [59, 130, 246], // blue-500
-          },
+    try {
+      import('jspdf').then((jsPDFModule) => {
+        import('jspdf-autotable').then((autoTableModule) => {
+          const jsPDF = jsPDFModule.default || jsPDFModule;
+          const autoTable = autoTableModule.default || autoTableModule;
+          const doc = new jsPDF();
+                    
+          // Add title
+          doc.setFontSize(18);
+          doc.text('SALES ORDER', 105, 20, null, null, 'center');
+                    
+          // Add order details
+          doc.setFontSize(12);
+          doc.text(`Order Number: ${order.orderNumber}`, 20, 40);
+          doc.text(`Customer: ${order.customerName}`, 20, 50);
+          doc.text(`Order Date: ${order.orderDate}`, 20, 60);
+          doc.text(`Status: ${order.status}`, 20, 70);
+                    
+          // Calculate totals - handle case where items might be undefined
+          const itemsToUse = order.items || [];
+          const subtotal = itemsToUse.reduce((sum, item) => sum + (item.total || 0), 0);
+          const tax = subtotal * 0.18; // 18% tax
+          const total = subtotal + tax;
+                    
+          // Add items table
+          autoTable(doc, {
+            startY: 80,
+            head: [['Product', 'Quantity', 'Unit Price', 'Total']],
+            body: itemsToUse.map(item => [
+              item.productName || 'N/A',
+              (item.quantity || 0).toString(),
+              formatCurrency(item.unitPrice || 0),
+              formatCurrency(item.total || 0)
+            ]),
+            styles: {
+              fontSize: 10,
+            },
+            headStyles: {
+              fillColor: [59, 130, 246], // blue-500
+            },
+          });
+                    
+          // Add totals
+          const finalY = (doc as any).lastAutoTable.finalY + 10;
+          doc.text(`Subtotal: ${formatCurrency(subtotal)}`, 140, finalY);
+          doc.text(`Tax (18%): ${formatCurrency(tax)}`, 140, finalY + 10);
+          doc.text(`Total: ${formatCurrency(total)}`, 140, finalY + 20);
+                    
+          // Save the PDF
+          doc.save(`SalesOrder_${order.orderNumber}.pdf`);
+        }).catch(error => {
+          console.error('Error loading jspdf-autotable for download:', error);
+          toast({
+            title: "Error",
+            description: "Failed to generate sales order for download"
+          });
         });
-          
-        // Add totals
-        const finalY = (doc as any).lastAutoTable.finalY + 10;
-        doc.text(`Subtotal: ${formatCurrency(subtotal)}`, 140, finalY);
-        doc.text(`Tax (18%): ${formatCurrency(tax)}`, 140, finalY + 10);
-        doc.text(`Total: ${formatCurrency(total)}`, 140, finalY + 20);
-          
-        // Save the PDF
-        doc.save(`SalesOrder_${order.orderNumber}.pdf`);
+      }).catch(error => {
+        console.error('Error loading jspdf for download:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load PDF library for download"
+        });
       });
-    });
+    } catch (error) {
+      console.error('Unexpected error in downloadSalesOrder:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during download"
+      });
+    }
   };
 
   // Function to print a professional sales order
   const printSalesOrder = (order: SalesOrder | null) => {
-    if (!order) return;
+    if (!order) {
+      console.error('No order provided to printSalesOrder');
+      return;
+    }
     
-    // Create a new window with professional print layout
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    try {
+      // Create a new window with professional print layout
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        console.error('Failed to open print window');
+        toast({
+          title: "Error",
+          description: "Failed to open print window"
+        });
+        return;
+      }
+      
+      // Calculate totals - handle case where items might be undefined
+      const itemsToUse = order.items || [];
+      const subtotal = itemsToUse.reduce((sum, item) => sum + (item.total || 0), 0);
+      const tax = subtotal * 0.18; // 18% tax
+      const total = subtotal + tax;
+      
+      // Create the HTML for the print view
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Sales Order ${order.orderNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            .order-info { margin: 20px 0; }
+            .order-info div { margin: 5px 0; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .totals { margin-top: 20px; text-align: right; }
+            .signature-section { margin-top: 50px; display: flex; justify-content: space-between; }
+            .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>SALES ORDER</h1>
+          </div>
+          
+          <div class="order-info">
+            <div><strong>Order Number:</strong> ${order.orderNumber}</div>
+            <div><strong>Customer:</strong> ${order.customerName}</div>
+            <div><strong>Order Date:</strong> ${order.orderDate}</div>
+            <div><strong>Status:</strong> ${order.status}</div>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsToUse.map(item => `
+              <tr>
+                <td>${item.productName || 'N/A'}</td>
+                <td>${item.quantity || 0}</td>
+                <td>${formatCurrency(item.unitPrice || 0)}</td>
+                <td>${formatCurrency(item.total || 0)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          
+          <div class="totals">
+            <div><strong>Subtotal:</strong> ${formatCurrency(subtotal)}</div>
+            <div><strong>Tax (18%):</strong> ${formatCurrency(tax)}</div>
+            <div><strong>Total:</strong> ${formatCurrency(total)}</div>
+          </div>
+          
+          <div class="signature-section">
+            <div>Customer Signature</div>
+            <div>Sales Representative</div>
+          </div>
+          
+          <div class="footer">
+            Thank you for your business!
+          </div>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      
+      // Wait for content to load before printing
+      printWindow.onload = () => {
+        printWindow.print();
+        printWindow.close();
+      };
+    } catch (error) {
+      console.error('Unexpected error in printSalesOrder:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during printing"
+      });
+    }
+  };
+
+  // Function to share a sales order as a file
+  const shareSalesOrder = (order: SalesOrder | null) => {
+    if (!order) {
+      console.error('No order provided to shareSalesOrder');
+      return;
+    }
     
-    // Calculate totals - handle case where items might be undefined
-    const itemsToUse = order.items || [];
-    const subtotal = itemsToUse.reduce((sum, item) => sum + (item.total || 0), 0);
-    const tax = subtotal * 0.18; // 18% tax
-    const total = subtotal + tax;
-    
-    // Create the HTML for the print view
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Sales Order ${order.orderNumber}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
-          .order-info { margin: 20px 0; }
-          .order-info div { margin: 5px 0; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; }
-          .totals { margin-top: 20px; text-align: right; }
-          .signature-section { margin-top: 50px; display: flex; justify-content: space-between; }
-          .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>SALES ORDER</h1>
-        </div>
-        
-        <div class="order-info">
-          <div><strong>Order Number:</strong> ${order.orderNumber}</div>
-          <div><strong>Customer:</strong> ${order.customerName}</div>
-          <div><strong>Order Date:</strong> ${order.orderDate}</div>
-          <div><strong>Status:</strong> ${order.status}</div>
-        </div>
-        
-        <table>
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Quantity</th>
-              <th>Unit Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsToUse.map(item => `
-            <tr>
-              <td>${item.productName || 'N/A'}</td>
-              <td>${item.quantity || 0}</td>
-              <td>${formatCurrency(item.unitPrice || 0)}</td>
-              <td>${formatCurrency(item.total || 0)}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-        
-        <div class="totals">
-          <div><strong>Subtotal:</strong> ${formatCurrency(subtotal)}</div>
-          <div><strong>Tax (18%):</strong> ${formatCurrency(tax)}</div>
-          <div><strong>Total:</strong> ${formatCurrency(total)}</div>
-        </div>
-        
-        <div class="signature-section">
-          <div>Customer Signature</div>
-          <div>Sales Representative</div>
-        </div>
-        
-        <div class="footer">
-          Thank you for your business!
-        </div>
-      </body>
-      </html>
-    `;
-    
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.focus();
-    
-    // Wait for content to load before printing
-    printWindow.onload = () => {
-      printWindow.print();
-      printWindow.close();
-    };
+    try {
+      import('jspdf').then((jsPDFModule) => {
+        import('jspdf-autotable').then((autoTableModule) => {
+          const jsPDF = jsPDFModule.default || jsPDFModule;
+          const autoTable = autoTableModule.default || autoTableModule;
+          const doc = new jsPDF();
+          
+          // Add title
+          doc.setFontSize(18);
+          doc.text('SALES ORDER', 105, 20, null, null, 'center');
+          
+          // Add order details
+          doc.setFontSize(12);
+          doc.text(`Order Number: ${order.orderNumber}`, 20, 40);
+          doc.text(`Customer: ${order.customerName}`, 20, 50);
+          doc.text(`Order Date: ${order.orderDate}`, 20, 60);
+          doc.text(`Status: ${order.status}`, 20, 70);
+          
+          // Calculate totals - handle case where items might be undefined
+          const itemsToUse = order.items || [];
+          const subtotal = itemsToUse.reduce((sum, item) => sum + (item.total || 0), 0);
+          const tax = subtotal * 0.18; // 18% tax
+          const total = subtotal + tax;
+          
+          // Add items table
+          autoTable(doc, {
+            startY: 80,
+            head: [['Product', 'Quantity', 'Unit Price', 'Total']],
+            body: itemsToUse.map(item => [
+              item.productName || 'N/A',
+              (item.quantity || 0).toString(),
+              formatCurrency(item.unitPrice || 0),
+              formatCurrency(item.total || 0)
+            ]),
+            styles: {
+              fontSize: 10,
+            },
+            headStyles: {
+              fillColor: [59, 130, 246], // blue-500
+            },
+          });
+          
+          // Add totals
+          const finalY = (doc as any).lastAutoTable.finalY + 10;
+          doc.text(`Subtotal: ${formatCurrency(subtotal)}`, 140, finalY);
+          doc.text(`Tax (18%): ${formatCurrency(tax)}`, 140, finalY + 10);
+          doc.text(`Total: ${formatCurrency(total)}`, 140, finalY + 20);
+          
+          // Get the PDF as a blob
+          const pdfBlob = doc.output('blob');
+          
+          // Create a File object from the blob
+          const pdfFile = new File([pdfBlob], `SalesOrder_${order.orderNumber}.pdf`, { type: 'application/pdf' });
+          
+          // Share the file if the Web Share API supports files
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+            navigator.share({
+              title: `Sales Order ${order.orderNumber}`,
+              text: `Sales order ${order.orderNumber} for ${order.customerName} with total ${formatCurrency(total)}`,
+              files: [pdfFile]
+            }).catch(error => {
+              console.error('Error sharing file:', error);
+              // Fallback to saving the file
+              doc.save(`SalesOrder_${order.orderNumber}.pdf`);
+              toast({
+                title: "File Saved",
+                description: "Sharing failed. File saved instead."
+              });
+            });
+          } else {
+            // Fallback: save the file
+            doc.save(`SalesOrder_${order.orderNumber}.pdf`);
+            toast({
+              title: "File Saved",
+              description: "Sales order saved. You can share it manually."
+            });
+          }
+        }).catch(error => {
+          console.error('Error loading jspdf-autotable:', error);
+          toast({
+            title: "Error",
+            description: "Failed to generate sales order for sharing"
+          });
+        });
+      }).catch(error => {
+        console.error('Error loading jspdf:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load PDF library"
+        });
+      });
+    } catch (error) {
+      console.error('Unexpected error in shareSalesOrder:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred"
+      });
+    }
   };
 
   // Load sales orders, customers, and products from database
@@ -897,77 +1047,7 @@ export const SalesOrders = ({ username, onBack, onLogout }: { username: string; 
                         <Printer className="h-4 w-4 mr-2" />
                         Print
                       </Button>
-                      <Button variant="outline" onClick={() => {
-                        // Generate and share the sales order as a file
-                        import('jspdf').then((jsPDF) => {
-                          import('jspdf-autotable').then(() => {
-                            const doc = new jsPDF.jsPDF();
-                            
-                            // Add title
-                            doc.setFontSize(18);
-                            doc.text('SALES ORDER', 105, 20, null, null, 'center');
-                            
-                            // Add order details
-                            doc.setFontSize(12);
-                            doc.text(`Order Number: ${viewingSO.orderNumber}`, 20, 40);
-                            doc.text(`Customer: ${viewingSO.customerName}`, 20, 50);
-                            doc.text(`Order Date: ${viewingSO.orderDate}`, 20, 60);
-                            doc.text(`Status: ${viewingSO.status}`, 20, 70);
-                            
-                            // Calculate totals - handle case where items might be undefined
-                            const itemsToUse = viewingSO.items || [];
-                            const subtotal = itemsToUse.reduce((sum, item) => sum + (item.total || 0), 0);
-                            const tax = subtotal * 0.18; // 18% tax
-                            const total = subtotal + tax;
-                            
-                            // Add items table
-                            (doc as any).autoTable({
-                              startY: 80,
-                              head: [['Product', 'Quantity', 'Unit Price', 'Total']],
-                              body: itemsToUse.map(item => [
-                                item.productName || 'N/A',
-                                (item.quantity || 0).toString(),
-                                formatCurrency(item.unitPrice || 0),
-                                formatCurrency(item.total || 0)
-                              ]),
-                              styles: {
-                                fontSize: 10,
-                              },
-                              headStyles: {
-                                fillColor: [59, 130, 246], // blue-500
-                              },
-                            });
-                            
-                            // Add totals
-                            const finalY = (doc as any).lastAutoTable.finalY + 10;
-                            doc.text(`Subtotal: ${formatCurrency(subtotal)}`, 140, finalY);
-                            doc.text(`Tax (18%): ${formatCurrency(tax)}`, 140, finalY + 10);
-                            doc.text(`Total: ${formatCurrency(total)}`, 140, finalY + 20);
-                            
-                            // Get the PDF as a blob
-                            const pdfBlob = doc.output('blob');
-                            
-                            // Create a File object from the blob
-                            const pdfFile = new File([pdfBlob], `SalesOrder_${viewingSO.orderNumber}.pdf`, { type: 'application/pdf' });
-                            
-                            // Share the file if the Web Share API supports files
-                            if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                              navigator.share({
-                                title: `Sales Order ${viewingSO.orderNumber}`,
-                                text: `Sales order ${viewingSO.orderNumber} for ${viewingSO.customerName} with total ${formatCurrency(viewingSO.total)}`,
-                                files: [pdfFile]
-                              }).catch(console.error);
-                            } else {
-                              // Fallback: save the file
-                              doc.save(`SalesOrder_${viewingSO.orderNumber}.pdf`);
-                              toast({
-                                title: "File Saved",
-                                description: "Sales order saved. You can share it manually."
-                              });
-                            }
-                          });
-                        });
-                      }}>
+                      <Button variant="outline" onClick={() => shareSalesOrder(viewingSO)}>
                         <Share className="h-4 w-4 mr-2" />
                         Share
                       </Button>
@@ -988,76 +1068,8 @@ export const SalesOrders = ({ username, onBack, onLogout }: { username: string; 
                           items: soItems,
                           total: soItems.reduce((sum, item) => sum + item.total, 0) * 1.18 // Including tax
                         };
-                        
-                        // Generate and share the sales order as a file
-                        import('jspdf').then((jsPDF) => {
-                          import('jspdf-autotable').then(() => {
-                            const doc = new jsPDF.jsPDF();
-                            
-                            // Add title
-                            doc.setFontSize(18);
-                            doc.text('SALES ORDER', 105, 20, null, null, 'center');
-                            
-                            // Add order details
-                            doc.setFontSize(12);
-                            doc.text(`Order Number: ${orderToPrint.orderNumber}`, 20, 40);
-                            doc.text(`Customer: ${orderToPrint.customerName}`, 20, 50);
-                            doc.text(`Order Date: ${orderToPrint.orderDate}`, 20, 60);
-                            doc.text(`Status: ${orderToPrint.status}`, 20, 70);
-                            
-                            // Calculate totals - handle case where items might be undefined
-                            const itemsToUse = orderToPrint.items && orderToPrint.items.length > 0 ? orderToPrint.items : soItems;
-                            const subtotal = itemsToUse.reduce((sum, item) => sum + (item.total || 0), 0);
-                            const tax = subtotal * 0.18; // 18% tax
-                            const total = subtotal + tax;
-                                                    
-                            // Add items table
-                            (doc as any).autoTable({
-                              startY: 80,
-                              head: [['Product', 'Quantity', 'Unit Price', 'Total']],
-                              body: itemsToUse.map(item => [
-                                item.productName || 'N/A',
-                                (item.quantity || 0).toString(),
-                                formatCurrency(item.unitPrice || 0),
-                                formatCurrency(item.total || 0)
-                              ]),
-                              styles: {
-                                fontSize: 10,
-                              },
-                              headStyles: {
-                                fillColor: [59, 130, 246], // blue-500
-                              },
-                            });
-                            
-                            // Add totals
-                            const finalY = (doc as any).lastAutoTable.finalY + 10;
-                            doc.text(`Subtotal: ${formatCurrency(subtotal)}`, 140, finalY);
-                            doc.text(`Tax (18%): ${formatCurrency(tax)}`, 140, finalY + 10);
-                            doc.text(`Total: ${formatCurrency(total)}`, 140, finalY + 20);
-                            
-                            // Get the PDF as a blob
-                            const pdfBlob = doc.output('blob');
-                            
-                            // Create a File object from the blob
-                            const pdfFile = new File([pdfBlob], `SalesOrder_${orderToPrint.orderNumber}.pdf`, { type: 'application/pdf' });
-                            
-                            // Share the file if the Web Share API supports files
-                            if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                              navigator.share({
-                                title: `Sales Order ${orderToPrint.orderNumber}`,
-                                text: `Sales order ${orderToPrint.orderNumber} for ${orderToPrint.customerName} with total ${formatCurrency(orderToPrint.total)}`,
-                                files: [pdfFile]
-                              }).catch(console.error);
-                            } else {
-                              // Fallback: save the file
-                              doc.save(`SalesOrder_${orderToPrint.orderNumber}.pdf`);
-                              toast({
-                                title: "File Saved",
-                                description: "Sales order saved. You can share it manually."
-                              });
-                            }
-                          });
-                        });
+                                              
+                        shareSalesOrder(orderToPrint);
                       }}>
                         <Share className="h-4 w-4 mr-2" />
                         Share
