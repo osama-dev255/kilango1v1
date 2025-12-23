@@ -743,6 +743,77 @@ export const testRLSPolicies = async (): Promise<boolean> => {
   }
 };
 
+// Save delivery note to Supabase
+export const saveDeliveryNote = async (name: string, data: any): Promise<{ success: boolean; id?: string; error?: string }> => {
+  try {
+    console.log('Checking user authentication...');
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error('Authentication error:', authError);
+      return { success: false, error: `Authentication error: ${authError.message}` };
+    }
+    
+    if (!user) {
+      console.error('User not authenticated');
+      return { success: false, error: 'User not authenticated' };
+    }
+    
+    console.log('User authenticated:', user.id);
+    console.log('Attempting to save delivery note:', { name, data, userId: user.id });
+    
+    const { data: savedNote, error } = await supabase
+      .from('delivery_notes')
+      .insert([
+        {
+          name,
+          data,
+          user_id: user.id
+        }
+      ])
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error saving delivery note:', error);
+      return { success: false, error: error.message };
+    }
+    
+    console.log('Delivery note saved successfully:', savedNote);
+    return { success: true, id: savedNote.id };
+  } catch (error) {
+    console.error('Error saving delivery note:', error);
+    return { success: false, error: 'Failed to save delivery note' };
+  }
+};
+
+// Get delivery notes for current user
+export const getDeliveryNotes = async (): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return { success: false, error: 'User not authenticated' };
+    }
+    
+    const { data, error } = await supabase
+      .from('delivery_notes')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching delivery notes:', error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error fetching delivery notes:', error);
+    return { success: false, error: 'Failed to fetch delivery notes' };
+  }
+};
+
 // Fix RLS policies by adding proper policies to Supabase
 export const fixRLSPolicies = async (): Promise<{ success: boolean; message: string }> => {
   try {

@@ -31,60 +31,23 @@ import {
 } from "lucide-react";
 import { getTemplateConfig, saveTemplateConfig, ReceiptTemplateConfig } from "@/utils/templateUtils";
 import { PrintUtils } from "@/utils/printUtils";
+import { formatCurrency } from "@/lib/currency";
+import { Template, DeliveryNoteItem, DeliveryNoteData,
+  DeliveryNoteTemplate,
+  OrderFormTemplate,
+  ContractTemplate,
+  InvoiceTemplate,
+  ReceiptTemplate,
+  NoticeTemplate,
+  QuotationTemplate,
+  ReportTemplate,
+  SalarySlipTemplate,
+  ComplimentaryGoodsTemplate,
+  ExpenseVoucherTemplate
+} from "@/templates";
+import { saveDeliveryNote, getProducts, Product } from "@/services/databaseService";
 
-interface Template {
-  id: string;
-  name: string;
-  type: "delivery-note" | "order-form" | "contract" | "invoice" | "receipt" | "notice" | "quotation" | "report" | "salary-slip" | "complimentary-goods" | "expense-voucher";
-  description: string;
-  content: string;
-  lastModified: string;
-  isActive: boolean;
-}
-
-interface DeliveryNoteItem {
-  id: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  delivered: number;
-  remarks: string;
-}
-
-interface DeliveryNoteData {
-  businessName: string;
-  businessAddress: string;
-  businessPhone: string;
-  businessEmail: string;
-  customerName: string;
-  customerAddress1: string;
-  customerAddress2: string;
-  customerPhone: string;
-  customerEmail: string;
-  deliveryNoteNumber: string;
-  date: string;
-  deliveryDate: string;
-  vehicle: string;
-  driver: string;
-  items: DeliveryNoteItem[];
-  deliveryNotes: string;
-  totalItems: number;
-  totalQuantity: number;
-  totalPackages: number;
-  preparedByName: string;
-  preparedByDate: string;
-  driverName: string;
-  driverDate: string;
-  receivedByName: string;
-  receivedByDate: string;
-  // Payment details
-  paidAmount: number;
-  // Approval details
-  approvalName: string;
-  approvalDate: string;
-  // Timestamp
-  timestamp: string;
-}
+// Interfaces are now imported from @/templates
 
 interface SavedDeliveryNote {
   id: string;
@@ -102,320 +65,19 @@ export const Templates = ({ onBack }: TemplatesProps) => {
   const [activeTab, setActiveTab] = useState<"manage" | "customize" | "preview">("manage");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [viewingTemplate, setViewingTemplate] = useState<string | null>(null);
+
   const [templates, setTemplates] = useState<Template[]>([
-    {
-      id: "1",
-      name: "Delivery Note",
-      type: "delivery-note",
-      description: "Professional delivery note template for product shipments",
-      content: `DELIVERY NOTE
-Delivery #[DELIVERY_NUMBER]
-Date: [DATE]
-Vehicle: [VEHICLE_REGISTRATION]
-Driver: [DRIVER_NAME]
-
-From:
-[BUSINESS_NAME]
-[BUSINESS_ADDRESS]
-[BUSINESS_PHONE]
-
-To:
-[CUSTOMER_NAME]
-[CUSTOMER_ADDRESS]
-[CUSTOMER_PHONE]
-
-Items:
-[ITEM_LIST]
-
-Special Instructions:
-[SPECIAL_INSTRUCTIONS]
-
-Signature: _________________
-Date: [SIGNATURE_DATE]
-
-Thank you for your business!`,
-      lastModified: "2023-08-15",
-      isActive: true
-    },
-    {
-      id: "2",
-      name: "Order Form",
-      type: "order-form",
-      description: "Business order form for customer purchases",
-      content: `ORDER FORM
-Order #[ORDER_NUMBER]
-Date: [DATE]
-
-Customer:
-[CUSTOMER_NAME]
-[CUSTOMER_ADDRESS]
-[CUSTOMER_PHONE]
-
-Items:
-[ITEM_LIST]
-
-Subtotal: [SUBTOTAL]
-Tax: [TAX]
-Discount: [DISCOUNT]
-Total: [TOTAL]
-
-Special Instructions:
-[SPECIAL_INSTRUCTIONS]
-
-Signature: _________________
-Date: [SIGNATURE_DATE]`,
-      lastModified: "2023-08-15",
-      isActive: false
-    },
-    {
-      id: "3",
-      name: "Contract Template",
-      type: "contract",
-      description: "Standard business contract template",
-      content: `CONTRACT AGREEMENT
-Contract #[CONTRACT_NUMBER]
-Date: [DATE]
-
-This Agreement is made between [PARTY_A] and [PARTY_B].
-
-1. Services/Products:
-[DESCRIPTION]
-
-2. Terms:
-[TERMS]
-
-3. Payment:
-[PAYMENT_TERMS]
-
-4. Duration:
-[DURATION]
-
-Signatures:
-_________________    _________________
-[PARTY_A]            [PARTY_B]
-Date:                Date:`,
-      lastModified: "2023-08-15",
-      isActive: false
-    },
-    {
-      id: "4",
-      name: "Invoice Template",
-      type: "invoice",
-      description: "Professional invoice template for billing",
-      content: `INVOICE
-Invoice #[INVOICE_NUMBER]
-Date: [DATE]
-Due Date: [DUE_DATE]
-
-From:
-[BUSINESS_NAME]
-[BUSINESS_ADDRESS]
-[BUSINESS_PHONE]
-
-To:
-[CUSTOMER_NAME]
-[CUSTOMER_ADDRESS]
-[CUSTOMER_PHONE]
-
-Items:
-[ITEM_LIST]
-
-Subtotal: [SUBTOTAL]
-Tax: [TAX]
-Discount: [DISCOUNT]
-Total: [TOTAL]
-
-Terms:
-Payment due within 30 days
-
-Thank you for your business!`,
-      lastModified: "2023-08-15",
-      isActive: false
-    },
-    {
-      id: "5",
-      name: "Receipt Template",
-      type: "receipt",
-      description: "Business receipt template for payments",
-      content: `POS BUSINESS
-123 Business St, City, Country
-Phone: (123) 456-7890
-
-Receipt #[RECEIPT_NUMBER]
-Date: [DATE]
-Time: [TIME]
-Customer: [CUSTOMER_NAME]
-
-Items:
-[ITEM_LIST]
-
-Subtotal: [SUBTOTAL]
-Tax: [TAX]
-Discount: [DISCOUNT]
-Total: [TOTAL]
-Payment Method: [PAYMENT_METHOD]
-Amount Received: [AMOUNT_RECEIVED]
-Change: [CHANGE]
-
-Thank you for your business!`,
-      lastModified: "2023-08-15",
-      isActive: false
-    },
-    {
-      id: "6",
-      name: "Notice Template",
-      type: "notice",
-      description: "Formal business notice template",
-      content: `NOTICE
-Notice #[NOTICE_NUMBER]
-Date: [DATE]
-
-To: [RECIPIENT]
-From: [SENDER]
-
-Subject: [SUBJECT]
-
-[CONTENT]
-
-Effective Date: [EFFECTIVE_DATE]
-
-Contact:
-[CONTACT_INFORMATION]`,
-      lastModified: "2023-08-15",
-      isActive: false
-    },
-    {
-      id: "7",
-      name: "Quotation Template",
-      type: "quotation",
-      description: "Business quotation/proposal template",
-      content: `QUOTATION
-Quote #[QUOTE_NUMBER]
-Date: [DATE]
-Valid Until: [VALID_UNTIL]
-
-From:
-[BUSINESS_NAME]
-[BUSINESS_ADDRESS]
-[BUSINESS_PHONE]
-
-To:
-[CUSTOMER_NAME]
-[CUSTOMER_ADDRESS]
-[CUSTOMER_PHONE]
-
-Items:
-[ITEM_LIST]
-
-Subtotal: [SUBTOTAL]
-Tax: [TAX]
-Discount: [DISCOUNT]
-Total: [TOTAL]
-
-This quote is valid for 30 days.`,
-      lastModified: "2023-08-15",
-      isActive: false
-    },
-    {
-      id: "8",
-      name: "Report Template",
-      type: "report",
-      description: "Business report template for documentation",
-      content: `BUSINESS REPORT
-Report #[REPORT_NUMBER]
-Date: [DATE]
-Prepared by: [PREPARER]
-
-Executive Summary:
-[SUMMARY]
-
-Details:
-[DETAILS]
-
-Conclusion:
-[CONCLUSION]
-
-Recommendations:
-[RECOMMENDATIONS]`,
-      lastModified: "2023-08-15",
-      isActive: false
-    },
-    {
-      id: "9",
-      name: "Salary Slip",
-      type: "salary-slip",
-      description: "Employee salary slip template",
-      content: `SALARY SLIP
-Employee: [EMPLOYEE_NAME]
-Employee ID: [EMPLOYEE_ID]
-Pay Period: [PAY_PERIOD]
-
-Earnings:
-Basic Salary: [BASIC_SALARY]
-Allowances: [ALLOWANCES]
-Overtime: [OVERTIME]
-Bonus: [BONUS]
-Gross Pay: [GROSS_PAY]
-
-Deductions:
-Tax: [TAX]
-Insurance: [INSURANCE]
-Other: [OTHER_DEDUCTIONS]
-Total Deductions: [TOTAL_DEDUCTIONS]
-
-Net Pay: [NET_PAY]
-
-Paid Date: [PAID_DATE]`,
-      lastModified: "2023-08-15",
-      isActive: false
-    },
-    {
-      id: "10",
-      name: "Complimentary Goods",
-      type: "complimentary-goods",
-      description: "Professional complimentary goods template",
-      content: `COMPLIMENTARY GOODS VOUCHER
-Voucher #[VOUCHER_NUMBER]
-Date: [DATE]
-
-This is to certify that the following goods have been provided free of charge to [CUSTOMER_NAME]:
-
-Items:
-[ITEM_LIST]
-
-Reason for Complimentary Goods:
-[REASON]
-
-Authorized by: _________________
-Signature: _________________
-Date: [DATE]`,
-      lastModified: "2023-08-15",
-      isActive: false
-    },
-    {
-      id: "11",
-      name: "Expense Voucher",
-      type: "expense-voucher",
-      description: "Professional expense voucher template",
-      content: `EXPENSE VOUCHER
-Voucher #[VOUCHER_NUMBER]
-Date: [DATE]
-Submitted by: [EMPLOYEE_NAME]
-
-Expense Details:
-Category: [CATEGORY]
-Description: [DESCRIPTION]
-Amount: [AMOUNT]
-
-Supporting Documents:
-[DOCUMENTS]
-
-Approved by: _________________
-Signature: _________________
-Date: [DATE]`,
-      lastModified: "2023-08-15",
-      isActive: false
-    }
+    DeliveryNoteTemplate,
+    OrderFormTemplate,
+    ContractTemplate,
+    InvoiceTemplate,
+    ReceiptTemplate,
+    NoticeTemplate,
+    QuotationTemplate,
+    ReportTemplate,
+    SalarySlipTemplate,
+    ComplimentaryGoodsTemplate,
+    ExpenseVoucherTemplate
   ]);
   
   const [deliveryNoteData, setDeliveryNoteData] = useState<DeliveryNoteData>({
@@ -461,6 +123,13 @@ Date: [DATE]`,
     const saved = localStorage.getItem('savedDeliveryNotes');
     return saved ? JSON.parse(saved) : [];
   });
+  
+  // State for inventory products
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
 
   // Effect to update savedDeliveryNotes when localStorage changes
   useEffect(() => {
@@ -483,6 +152,21 @@ Date: [DATE]`,
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
+  }, []);
+
+  // Load products from inventory
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await getProducts();
+        setProducts(productsData || []);
+        setFilteredProducts(productsData || []);
+      } catch (error) {
+        console.error('Failed to load products:', error);
+      }
+    };
+    
+    loadProducts();
   }, []);
 
   const [deliveryNoteName, setDeliveryNoteName] = useState<string>("");
@@ -691,6 +375,48 @@ Date: [DATE]`,
   };
 
   // Add new item
+  // Handle product search (only by name, like sales terminal)
+  const handleProductSearch = (search: string, index: number) => {
+    setSearchTerm(search);
+    setActiveItemIndex(index);
+    
+    if (search.trim() === '') {
+      setFilteredProducts(products);
+      setShowProductDropdown(true);
+      return;
+    }
+    
+    const filtered = products.filter(product => 
+      (product.name && product.name.toLowerCase().includes(search.toLowerCase()))
+    );
+    
+    setFilteredProducts(filtered);
+    setShowProductDropdown(true);
+  };
+
+  // Handle product selection
+  const handleProductSelect = (product: Product, index: number) => {
+    setDeliveryNoteData(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => 
+        i === index 
+          ? { 
+              ...item, 
+              description: product.name,
+              unit: product.unit_of_measure || "",
+              quantity: item.quantity || 1,
+              delivered: item.delivered || 1
+            } 
+          : item
+      )
+    }));
+    
+    setSearchTerm('');
+    setShowProductDropdown(false);
+    setActiveItemIndex(null);
+  };
+
+  // Add new item
   const handleAddItem = () => {
     setDeliveryNoteData(prev => ({
       ...prev,
@@ -731,7 +457,7 @@ Date: [DATE]`,
   const [showActionButtons, setShowActionButtons] = useState(false);
   const [savedNoteName, setSavedNoteName] = useState("");
 
-  const handleSaveDeliveryNote = () => {
+  const handleSaveDeliveryNote = async () => {
     if (!deliveryNoteName.trim()) {
       const deliveryNoteNumber = getNextDeliveryNoteNumber();
       setDeliveryNoteName(deliveryNoteNumber);
@@ -764,6 +490,27 @@ Date: [DATE]`,
     const updatedNotes = [...savedDeliveryNotes, newSavedNote];
     setSavedDeliveryNotes(updatedNotes);
     localStorage.setItem('savedDeliveryNotes', JSON.stringify(updatedNotes));
+    
+    // Save to Supabase
+    try {
+      console.log('Attempting to save delivery note to Supabase...', {
+        name: newSavedNote.name,
+        data: newSavedNote.data
+      });
+      
+      const result = await saveDeliveryNote(newSavedNote.name, newSavedNote.data);
+      console.log('Supabase save result:', result);
+      
+      if (result.success) {
+        console.log('Delivery note saved to Supabase successfully');
+      } else {
+        console.error('Failed to save delivery note to Supabase:', result.error);
+        alert(`Delivery note saved locally but failed to save to cloud: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error saving delivery note to Supabase:', error);
+      alert(`Delivery note saved locally but failed to save to cloud: ${error}`);
+    }
     
     // Show success message
     alert(`Delivery note "${newSavedNote.name}" saved successfully!`);
@@ -2079,12 +1826,38 @@ Date: [DATE]`,
                           <tbody>
                             {deliveryNoteData.items.map((item) => (
                               <tr key={item.id}>
-                                <td className="border border-gray-300 p-2">
+                                <td className="border border-gray-300 p-2 relative">
                                   <Input 
-                                    value={item.description}
-                                    onChange={(e) => handleItemChange(item.id, "description", e.target.value)}
+                                    value={searchTerm && activeItemIndex === deliveryNoteData.items.indexOf(item) ? searchTerm : item.description}
+                                    onChange={(e) => {
+                                      const index = deliveryNoteData.items.indexOf(item);
+                                      handleProductSearch(e.target.value, index);
+                                    }}
+                                    onFocus={() => {
+                                      const index = deliveryNoteData.items.indexOf(item);
+                                      handleProductSearch('', index);
+                                    }}
                                     className="w-full h-6 p-1 text-sm"
+                                    placeholder="Search products..."
                                   />
+                                  {showProductDropdown && activeItemIndex === deliveryNoteData.items.indexOf(item) && (
+                                    <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                                      {filteredProducts.map((product, idx) => (
+                                        <div 
+                                          key={`${product.id}-${idx}`}
+                                          className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100"
+                                          onClick={() => handleProductSelect(product, deliveryNoteData.items.indexOf(item))}
+                                        >
+                                          <div className="font-medium">{product.name}</div>
+                                          <div className="text-sm text-gray-500">{product.description || 'No description'}</div>
+                                          <div className="text-xs text-gray-400">Stock: {product.stock_quantity} | Price: {formatCurrency(product.selling_price)}</div>
+                                        </div>
+                                      ))}
+                                      {filteredProducts.length === 0 && (
+                                        <div className="p-2 text-gray-500">No products found</div>
+                                      )}
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="border border-gray-300 p-2">
                                   <Input 
