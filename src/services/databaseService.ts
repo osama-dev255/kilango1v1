@@ -1355,11 +1355,24 @@ export const updateSale = async (id: string, sale: Partial<Sale>): Promise<Sale 
 
 export const deleteSale = async (id: string): Promise<boolean> => {
   try {
+    // First delete all returns associated with this sale
+    const returnsDeleted = await deleteReturnsBySaleId(id);
+    if (!returnsDeleted) {
+      throw new Error('Failed to delete associated returns');
+    }
+    
+    // Then delete all sale items associated with this sale
+    const saleItemsDeleted = await deleteSaleItemsBySaleId(id);
+    if (!saleItemsDeleted) {
+      throw new Error('Failed to delete associated sale items');
+    }
+    
+    // Finally delete the sale itself
     const { error } = await supabase
       .from('sales')
       .delete()
       .eq('id', id);
-      
+    
     if (error) throw error;
     return true;
   } catch (error) {
@@ -1416,12 +1429,27 @@ export const createSaleItem = async (saleItem: Omit<SaleItem, 'id'>): Promise<Sa
       .insert([saleItem])
       .select()
       .single();
-      
+    
     if (error) throw error;
     return data || null;
   } catch (error) {
     console.error('Error creating sale item:', error);
     return null;
+  }
+};
+
+export const deleteSaleItemsBySaleId = async (saleId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('sale_items')
+      .delete()
+      .eq('sale_id', saleId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error deleting sale items:', error);
+    return false;
   }
 };
 
@@ -2826,12 +2854,62 @@ export const updateReturnItem = async (id: string, returnItem: Partial<ReturnIte
       .eq('id', id)
       .select()
       .single();
-      
+    
     if (error) throw error;
     return data || null;
   } catch (error) {
     console.error('Error updating return item:', error);
     return null;
+  }
+};
+
+export const deleteReturnItemsByReturnId = async (returnId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('return_items')
+      .delete()
+      .eq('return_id', returnId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error deleting return items:', error);
+    return false;
+  }
+};
+
+export const deleteReturnsBySaleId = async (saleId: string): Promise<boolean> => {
+  try {
+    // First get all returns for this sale
+    const { data: returns, error: returnsError } = await supabase
+      .from('returns')
+      .select('id')
+      .eq('sale_id', saleId);
+    
+    if (returnsError) throw returnsError;
+    
+    // Delete all return items for each return
+    if (returns && returns.length > 0) {
+      for (const returnRecord of returns) {
+        const returnItemsDeleted = await deleteReturnItemsByReturnId(returnRecord.id);
+        if (!returnItemsDeleted) {
+          throw new Error('Failed to delete associated return items');
+        }
+      }
+      
+      // Then delete the returns themselves
+      const { error } = await supabase
+        .from('returns')
+        .delete()
+        .eq('sale_id', saleId);
+      
+      if (error) throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting returns:', error);
+    return false;
   }
 };
 

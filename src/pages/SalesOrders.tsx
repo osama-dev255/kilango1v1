@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Calendar, Receipt, Plus, Edit, Trash2, Eye, X } from "lucide-react";
+import { Search, Filter, Calendar, Receipt, Plus, Edit, Trash2, Eye, X, Printer, Share, Download } from "lucide-react";
 import { getSales, getCustomers, getSaleItemsWithProducts, createSale, updateSale, deleteSale, Customer, Sale, Product, getProducts, createSaleItem } from "@/services/databaseService";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currency";
@@ -59,6 +59,47 @@ export const SalesOrders = ({ username, onBack, onLogout }: { username: string; 
 
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string; price: number }[]>([]);
+
+  // Function to download sales order as text file
+  const downloadSalesOrder = (order: SalesOrder | null) => {
+    if (!order) return;
+    
+    // Create content for the sales order
+    let content = `SALES ORDER\n`;
+    content += `============\n\n`;
+    content += `Order Number: ${order.orderNumber}\n`;
+    content += `Customer: ${order.customerName}\n`;
+    content += `Order Date: ${order.orderDate}\n`;
+    content += `Status: ${order.status}\n\n`;
+    
+    content += `ITEMS:\n`;
+    content += `------\n`;
+    order.items.forEach(item => {
+      content += `${item.productName} - Qty: ${item.quantity} - Price: ${formatCurrency(item.unitPrice)} - Total: ${formatCurrency(item.total)}\n`;
+    });
+    content += `\n`;
+
+    
+    content += `TOTALS:\n`;
+    content += `-------\n`;
+    const subtotal = order.items.reduce((sum, item) => sum + item.total, 0);
+    const tax = subtotal * 0.18; // 18% tax
+    const total = subtotal + tax;
+    content += `Subtotal: ${formatCurrency(subtotal)}\n`;
+    content += `Tax (18%): ${formatCurrency(tax)}\n`;
+    content += `Total: ${formatCurrency(total)}\n`;
+    
+    // Create and download the file
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SalesOrder_${order.orderNumber}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // Load sales orders, customers, and products from database
   useEffect(() => {
@@ -738,13 +779,93 @@ export const SalesOrders = ({ username, onBack, onLogout }: { username: string; 
                 
                 <div className="flex justify-end gap-2">
                   {viewingSO ? (
-                    // View mode - only show close button
-                    <Button onClick={() => setIsDialogOpen(false)}>
-                      Close
-                    </Button>
-                  ) : (
-                    // Edit/Create mode - show full buttons
+                    // View mode - show download, print, share, and close buttons
                     <>
+                      <Button variant="outline" onClick={() => downloadSalesOrder(viewingSO)}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </Button>
+                      <Button variant="outline" onClick={() => window.print()}>
+                        <Printer className="h-4 w-4 mr-2" />
+                        Print
+                      </Button>
+                      <Button variant="outline" onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: `Sales Order ${viewingSO.orderNumber}`,
+                            text: `View sales order ${viewingSO.orderNumber} for ${viewingSO.customerName} with total ${formatCurrency(viewingSO.total)}`,
+                            url: window.location.href
+                          }).catch(console.error);
+                        } else {
+                          // Fallback: copy to clipboard
+                          navigator.clipboard.writeText(window.location.href);
+                          toast({
+                            title: "Link Copied",
+                            description: "Sales order link copied to clipboard"
+                          });
+                        }
+                      }}>
+                        <Share className="h-4 w-4 mr-2" />
+                        Share
+                      </Button>
+                      <Button onClick={() => setIsDialogOpen(false)}>
+                        Close
+                      </Button>
+                    </>
+                  ) : (
+                    // Edit/Create mode - show download, print, share, and full buttons
+                    <>
+                      <Button variant="outline" onClick={() => {
+                        // For edit mode, we'll use the current editingSO data if available
+                        const orderToPrint = editingSO || {
+                          orderNumber: 'New Order',
+                          customerName: customers.find(c => c.id === newSO.customerId)?.name || 'New Customer',
+                          orderDate: newSO.orderDate,
+                          status: newSO.status,
+                          items: soItems,
+                          total: soItems.reduce((sum, item) => sum + item.total, 0) * 1.18 // Including tax
+                        };
+                        
+                        if (navigator.share) {
+                          navigator.share({
+                            title: `Sales Order ${orderToPrint.orderNumber}`,
+                            text: `View sales order ${orderToPrint.orderNumber} for ${orderToPrint.customerName} with total ${formatCurrency(orderToPrint.total)}`,
+                            url: window.location.href
+                          }).catch(console.error);
+                        } else {
+                          // Fallback: copy to clipboard
+                          navigator.clipboard.writeText(window.location.href);
+                          toast({
+                            title: "Link Copied",
+                            description: "Sales order link copied to clipboard"
+                          });
+                        }
+                      }}>
+                        <Share className="h-4 w-4 mr-2" />
+                        Share
+                      </Button>
+                      <Button variant="outline" onClick={() => window.print()}>
+                        <Printer className="h-4 w-4 mr-2" />
+                        Print
+                      </Button>
+                      <Button variant="outline" onClick={() => {
+                        // For edit mode, we'll create a temporary order object
+                        const orderToDownload = editingSO || {
+                          id: 'temp',
+                          orderNumber: 'New Order',
+                          customerName: customers.find(c => c.id === newSO.customerId)?.name || 'New Customer',
+                          orderDate: newSO.orderDate,
+                          status: newSO.status,
+                          items: soItems,
+                          subtotal: soItems.reduce((sum, item) => sum + item.total, 0),
+                          tax: soItems.reduce((sum, item) => sum + item.total, 0) * 0.18,
+                          total: soItems.reduce((sum, item) => sum + item.total, 0) * 1.18
+                        };
+                        downloadSalesOrder(orderToDownload);
+                      }}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </Button>
                       <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                         Cancel
                       </Button>
