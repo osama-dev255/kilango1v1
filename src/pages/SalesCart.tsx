@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Minus, Trash2, ShoppingCart, Search, User, Percent, CreditCard, Wallet, Scan, Star, Printer, Download } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingCart, Search, User, Percent, CreditCard, Wallet, Scan, Star, Printer, Download, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currency";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
@@ -69,6 +69,7 @@ export const SalesCart = ({ username, onBack, onLogout }: SalesCartProps) => {
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isTransactionCompleteDialogOpen, setIsTransactionCompleteDialogOpen] = useState(false);
+  const [isTransactionTypeDialogOpen, setIsTransactionTypeDialogOpen] = useState(false);
   const [amountReceived, setAmountReceived] = useState("");
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [transactionId, setTransactionId] = useState("");
@@ -258,6 +259,24 @@ export const SalesCart = ({ username, onBack, onLogout }: SalesCartProps) => {
       }
     }
 
+    setIsTransactionTypeDialogOpen(true);
+  };
+
+  const handleProcessInvoice = () => {
+    setIsTransactionTypeDialogOpen(false);
+    // Here you can implement the invoice generation logic
+    // For now, we'll just show a toast notification
+    toast({
+      title: "Invoice Processed",
+      description: "Invoice has been generated successfully.",
+      variant: "success",
+    });
+    // Optionally, you can clear the cart after invoice generation
+    setCart([]);
+  };
+
+  const handleProcessPayment = () => {
+    setIsTransactionTypeDialogOpen(false);
     setIsPaymentDialogOpen(true);
   };
 
@@ -1175,6 +1194,36 @@ export const SalesCart = ({ username, onBack, onLogout }: SalesCartProps) => {
             onCancel={() => setIsScannerOpen(false)}
             autoAddToCart={true} // Enable auto-add for better sales experience
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Transaction Type Dialog - Invoice or Payment */}
+      <Dialog open={isTransactionTypeDialogOpen} onOpenChange={setIsTransactionTypeDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Process Transaction</DialogTitle>
+            <p className="text-sm text-gray-600">Choose how you want to process this transaction:</p>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-3 mt-4">
+            <Button
+              onClick={handleProcessInvoice}
+              className="w-full h-12 text-lg"
+              variant="outline"
+            >
+              <FileText className="h-5 w-5 mr-2" />
+              Process Invoice
+            </Button>
+            
+            <Button
+              onClick={handleProcessPayment}
+              className="w-full h-12 text-lg"
+              variant="default"
+            >
+              <CreditCard className="h-5 w-5 mr-2" />
+              Process Payment
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
