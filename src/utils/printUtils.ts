@@ -1,4 +1,4 @@
-import { getTemplateConfig, generateCustomReceipt, getPurchaseTemplateConfig, generateCustomPurchaseReceipt } from "@/utils/templateUtils";
+import { getTemplateConfig, generateCustomReceipt, getPurchaseTemplateConfig, generateCustomPurchaseReceipt, getInvoiceTemplateConfig, generateCustomInvoice } from '@/utils/templateUtils';
 
 // Remove the dynamic import approach and use a CDN-based solution instead
 // This avoids build-time dependency resolution issues with Vite/Rollup
@@ -1546,6 +1546,127 @@ export class PrintUtils {
       reportWindow.print();
       reportWindow.close();
     }, 250);
+  }
+
+  // Print invoice
+  static async printInvoice(transaction: any) {
+    // Show loading indicator
+    this.showLoadingIndicator('Preparing invoice for printing...');
+    
+    // For mobile devices, use the mobile print approach
+    if (this.isMobileDevice()) {
+      return this.printInvoiceMobile(transaction);
+    }
+
+    // For desktop, use a hidden iframe approach to avoid window stacking
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'absolute';
+    printFrame.style.top = '-1000px';
+    printFrame.style.left = '-1000px';
+    document.body.appendChild(printFrame);
+    
+    const printDocument = printFrame.contentDocument || printFrame.contentWindow?.document;
+    if (!printDocument) {
+      this.hideLoadingIndicator();
+      console.error('Could not access print frame document');
+      return;
+    }
+    
+    // Get invoice template configuration
+    const templateConfig = getInvoiceTemplateConfig();
+    
+    // Generate invoice HTML using the custom template
+    const invoiceContent = generateCustomInvoice(transaction, templateConfig);
+    
+    // Write content to iframe and print
+    printDocument.open();
+    printDocument.write(invoiceContent);
+    printDocument.close();
+    
+    // Wait for content to load before printing
+    printFrame.onload = () => {
+      try {
+        printFrame.contentWindow?.focus();
+        printFrame.contentWindow?.print();
+      } catch (error) {
+        console.error('Error during printing:', error);
+      } finally {
+        // Clean up - remove iframe after a short delay to ensure printing started
+        setTimeout(() => {
+          if (printFrame.parentNode) {
+            printFrame.parentNode.removeChild(printFrame);
+          }
+          this.hideLoadingIndicator();
+        }, 1000);
+      }
+    };
+    
+    // Fallback cleanup in case onload doesn't fire
+    setTimeout(() => {
+      if (printFrame.parentNode) {
+        printFrame.parentNode.removeChild(printFrame);
+      }
+      this.hideLoadingIndicator();
+    }, 5000);
+  }
+
+  // Print invoice for mobile devices
+  static printInvoiceMobile(transaction: any) {
+    console.log('Using mobile invoice print approach...');
+    
+    // Get invoice template configuration
+    const templateConfig = getInvoiceTemplateConfig();
+    
+    // Generate invoice HTML using the custom template
+    const invoiceContent = generateCustomInvoice(transaction, templateConfig);
+    
+    // Create a modal dialog for mobile printing with a clear print button
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    modal.style.zIndex = '10000';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    
+    // Create modal content
+    const modalContent = `
+      <div style="background: white; padding: 20px; max-width: 90%; max-height: 80%; overflow-y: auto;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Invoice Preview</h2>
+        <div id="invoice-content">
+          ${invoiceContent}
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button id="cancelPrint" style="flex: 1; padding: 12px; background: #ccc; border: none; border-radius: 5px; font-size: 16px;">Cancel</button>
+          <button id="confirmPrint" style="flex: 1; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 5px; font-size: 16px;">Print Invoice</button>
+        </div>
+      </div>
+    `;
+    
+    modal.innerHTML = modalContent;
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    const confirmBtn = modal.querySelector('#confirmPrint');
+    const cancelBtn = modal.querySelector('#cancelPrint');
+    
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        // Use the standard print method for mobile
+        this.printInvoice(transaction);
+        document.body.removeChild(modal);
+      });
+    }
+    
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+    }
   }
 
   // Print purchase order

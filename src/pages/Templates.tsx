@@ -220,8 +220,50 @@ export const Templates = ({ onBack }: TemplatesProps) => {
     const template = templates.find(t => t.id === templateId);
     if (template && template.type === "delivery-note") {
       setActiveTab("preview");
+    } else if (template && template.type === "invoice") {
+      // For invoice templates, go to the invoice preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("invoice-preview");
+    } else if (template && template.type === "order-form") {
+      // For order form templates, go to the order form preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("order-form-preview");
+    } else if (template && template.type === "contract") {
+      // For contract templates, go to the contract preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("contract-preview");
+    } else if (template && template.type === "quotation") {
+      // For quotation templates, go to the quotation preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("quotation-preview");
+    } else if (template && template.type === "receipt") {
+      // For receipt templates, go to the receipt preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("receipt-preview");
+    } else if (template && template.type === "notice") {
+      // For notice templates, go to the notice preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("notice-preview");
+    } else if (template && template.type === "report") {
+      // For report templates, go to the report preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("report-preview");
+    } else if (template && template.type === "salary-slip") {
+      // For salary slip templates, go to the salary slip preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("salary-slip-preview");
+    } else if (template && template.type === "complimentary-goods") {
+      // For complimentary goods templates, go to the complimentary goods preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("complimentary-goods-preview");
+    } else if (template && template.type === "expense-voucher") {
+      // For expense voucher templates, go to the expense voucher preview view
+      setSelectedTemplate(templateId);
+      setActiveTab("expense-voucher-preview");
     } else {
-      handlePrintPreview(templateId);
+      // For other templates, go to customization view
+      setSelectedTemplate(templateId);
+      setActiveTab("customize");
     }
   };
 
@@ -332,7 +374,7 @@ export const Templates = ({ onBack }: TemplatesProps) => {
       // Create a mock transaction for preview
       const mockTransaction = {
         id: "TXN-001",
-        receiptNumber: "INV-2023-001",
+        receiptNumber: template.type === "invoice" ? "INV-2023-001" : "RCT-2023-001",
         items: [
           { name: "Product 1", price: 10.00, quantity: 2, total: 20.00 },
           { name: "Product 2", price: 15.00, quantity: 1, total: 15.00 }
@@ -351,8 +393,16 @@ export const Templates = ({ onBack }: TemplatesProps) => {
         }
       };
       
-      // Print using the existing PrintUtils
-      PrintUtils.printReceipt(mockTransaction);
+      // Print using the appropriate PrintUtils based on template type
+      if (template.type === "invoice") {
+        PrintUtils.printInvoice(mockTransaction);
+      } else if (template.type === "receipt") {
+        PrintUtils.printReceipt(mockTransaction);
+      } else {
+        // For other template types, we could add specific handling
+        // For now, default to receipt printing
+        PrintUtils.printReceipt(mockTransaction);
+      }
     }
   };
 
@@ -1529,6 +1579,26 @@ export const Templates = ({ onBack }: TemplatesProps) => {
                 ? "Template Management" 
                 : activeTab === "preview" && viewingTemplate
                   ? "Delivery Note Preview"
+                  : activeTab === "invoice-preview"
+                    ? "Invoice Preview"
+                  : activeTab === "order-form-preview"
+                    ? "Order Form Preview"
+                  : activeTab === "contract-preview"
+                    ? "Contract Preview"
+                  : activeTab === "quotation-preview"
+                    ? "Quotation Preview"
+                  : activeTab === "receipt-preview"
+                    ? "Receipt Preview"
+                  : activeTab === "notice-preview"
+                    ? "Notice Preview"
+                  : activeTab === "report-preview"
+                    ? "Report Preview"
+                  : activeTab === "salary-slip-preview"
+                    ? "Salary Slip Preview"
+                  : activeTab === "complimentary-goods-preview"
+                    ? "Complimentary Goods Preview"
+                  : activeTab === "expense-voucher-preview"
+                    ? "Expense Voucher Preview"
                   : viewingTemplate 
                     ? `Viewing Template: ${currentTemplate?.name || 'Template'}`
                     : selectedTemplate 
@@ -1608,7 +1678,7 @@ export const Templates = ({ onBack }: TemplatesProps) => {
                               {template.description}
                             </p>
                             <div className="mt-4 text-sm text-muted-foreground">
-                              Click to preview
+                              Click to customize
                             </div>
                           </div>
                         </div>
@@ -2044,6 +2114,365 @@ export const Templates = ({ onBack }: TemplatesProps) => {
                             />
                           </div>
                           <div className="text-xs mt-2">(Signature Required)</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === "invoice-preview" ? (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Invoice Preview</h3>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setActiveTab("manage")}>
+                      Back to Templates
+                    </Button>
+                    <Button onClick={() => handlePrintPreview(currentTemplate?.id || '')}>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print
+                    </Button>
+                    <Button onClick={() => {
+                      // Download functionality would go here
+                      alert('Download functionality would be implemented here');
+                    }}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="border rounded-lg p-6 max-w-4xl mx-auto bg-white">
+                  <div className="space-y-6">
+                    {/* Invoice Header */}
+                    <div className="text-center border-b pb-4">
+                      <h1 className="text-3xl font-bold text-gray-800">INVOICE</h1>
+                      <div className="mt-2 text-lg font-semibold">INV-2024-001</div>
+                    </div>
+                    
+                    {/* Business and Client Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                      <div>
+                        <h3 className="font-bold text-gray-700 uppercase tracking-wide">FROM:</h3>
+                        <div className="mt-2">
+                          <div className="font-semibold">Your Business Name</div>
+                          <div>123 Business Street</div>
+                          <div>Phone: (555) 123-4567</div>
+                          <div>Email: billing@yourbusiness.com</div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-bold text-gray-700 uppercase tracking-wide">BILL TO:</h3>
+                        <div className="mt-2">
+                          <div className="font-semibold">Client Company Name</div>
+                          <div>456 Client Avenue</div>
+                          <div>Client City, State 67890</div>
+                          <div>Phone: (555) 987-6543</div>
+                          <div>Email: accounts@clientcompany.com</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Invoice Dates */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                      <div>
+                        <div className="text-sm text-gray-600">INVOICE DATE</div>
+                        <div className="font-medium">12/3/2025</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-600">DUE DATE</div>
+                        <div className="font-medium">1/2/2026</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-600">AMOUNT DUE</div>
+                        <div className="font-bold text-xl">TZS 2,395.84</div>
+                      </div>
+                    </div>
+                    
+                    {/* Terms */}
+                    <div className="pt-2">
+                      <div className="text-sm text-gray-600">TERMS</div>
+                      <div className="font-medium">Net 30</div>
+                    </div>
+                    
+                    {/* Items Table */}
+                    <div className="pt-4">
+                      <h3 className="font-bold text-gray-700 uppercase tracking-wide mb-2">SERVICES RENDERED:</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse border border-gray-300">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="border border-gray-300 px-4 py-2 text-left">Item</th>
+                              <th className="border border-gray-300 px-4 py-2 text-left">Description</th>
+                              <th className="border border-gray-300 px-4 py-2 text-center">Quantity</th>
+                              <th className="border border-gray-300 px-4 py-2 text-left">Unit</th>
+                              <th className="border border-gray-300 px-4 py-2 text-right">Rate</th>
+                              <th className="border border-gray-300 px-4 py-2 text-right">Amount</th>
+                              <th className="border border-gray-300 px-4 py-2 text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="border border-gray-300 px-4 py-2">001</td>
+                              <td className="border border-gray-300 px-4 py-2">Website Design & Development</td>
+                              <td className="border border-gray-300 px-4 py-2 text-center">1</td>
+                              <td className="border border-gray-300 px-4 py-2">Project</td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">1800</td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">1,800.00</td>
+                              <td className="border border-gray-300 px-4 py-2 text-center">-</td>
+                            </tr>
+                            <tr>
+                              <td className="border border-gray-300 px-4 py-2">002</td>
+                              <td className="border border-gray-300 px-4 py-2">Monthly Support (3 months)</td>
+                              <td className="border border-gray-300 px-4 py-2 text-center">3</td>
+                              <td className="border border-gray-300 px-4 py-2">Months</td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">150</td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">450.00</td>
+                              <td className="border border-gray-300 px-4 py-2 text-center">-</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      <div className="flex justify-end mt-2">
+                        <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 border border-blue-600 rounded-md text-sm font-medium">
+                          Add Item
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Notes */}
+                    <div className="pt-4">
+                      <h3 className="font-bold text-gray-700 uppercase tracking-wide mb-2">NOTES:</h3>
+                      <div className="text-gray-700">Thank you for your business! Payment due within 30 days.</div>
+                    </div>
+                    
+                    {/* Payment Options */}
+                    <div className="pt-2">
+                      <h3 className="font-bold text-gray-700 uppercase tracking-wide mb-2">PAYMENT OPTIONS:</h3>
+                      <div className="text-gray-700">Bank Transfer, Check, or Credit Card</div>
+                    </div>
+                    
+                    {/* Totals */}
+                    <div className="pt-4 border-t">
+                      <div className="grid grid-cols-2 gap-4 max-w-xs ml-auto">
+                        <div className="text-right font-medium">Subtotal:</div>
+                        <div className="text-right">TZS 2,250.00</div>
+                        
+                        <div className="text-right font-medium">Discount:</div>
+                        <div className="text-right">50</div>
+                        
+                        <div className="text-right font-medium">Tax:</div>
+                        <div className="text-right">195.84</div>
+                        
+                        <div className="text-right font-bold text-lg mt-2">TOTAL:</div>
+                        <div className="text-right font-bold text-lg mt-2">TZS 2,395.84</div>
+                        
+                        <div className="text-right font-medium mt-2">Amount Paid:</div>
+                        <div className="text-right mt-2">0</div>
+                        
+                        <div className="text-right font-bold text-xl mt-2">AMOUNT DUE:</div>
+                        <div className="text-right font-bold text-xl mt-2">TZS 2,395.84</div>
+                      </div>
+                    </div>
+                    
+                    {/* Footer */}
+                    <div className="pt-8 text-center text-gray-600 text-sm">
+                      <div>Thank you for your business! Payment due within 30 days.</div>
+                      <div className="mt-2">Please make checks payable to</div>
+                      <div className="font-semibold mt-1">Your Business Name</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === "order-form-preview" ? (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Order Form Preview</h3>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setActiveTab("manage")}>
+                      Back to Templates
+                    </Button>
+                    <Button onClick={() => handlePrintPreview(currentTemplate?.id || '')}>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print
+                    </Button>
+                    <Button onClick={() => {
+                      // Download functionality would go here
+                      alert('Download functionality would be implemented here');
+                    }}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="border rounded-lg p-6 max-w-4xl mx-auto bg-white">
+                  <div className="space-y-6">
+                    <div className="text-center border-b pb-4">
+                      <h1 className="text-3xl font-bold text-gray-800">ORDER FORM</h1>
+                      <div className="mt-2 text-lg font-semibold">Order #OF-2024-001</div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <div className="text-sm text-gray-600">Date: 12/3/2025</div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <h3 className="font-bold text-gray-700">Customer Information:</h3>
+                      <div className="mt-2">
+                        <div className="font-semibold">John Smith</div>
+                        <div>123 Customer Street, City, State 12345</div>
+                        <div>Phone: (555) 123-4567</div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-6">
+                      <h3 className="font-bold text-gray-700 mb-3">Items:</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse border border-gray-300">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="border border-gray-300 px-4 py-2 text-left">Item</th>
+                              <th className="border border-gray-300 px-4 py-2 text-left">Description</th>
+                              <th className="border border-gray-300 px-4 py-2 text-center">Quantity</th>
+                              <th className="border border-gray-300 px-4 py-2 text-right">Price</th>
+                              <th className="border border-gray-300 px-4 py-2 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="border border-gray-300 px-4 py-2">PROD-001</td>
+                              <td className="border border-gray-300 px-4 py-2">Premium Product</td>
+                              <td className="border border-gray-300 px-4 py-2 text-center">2</td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">$50.00</td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">$100.00</td>
+                            </tr>
+                            <tr>
+                              <td className="border border-gray-300 px-4 py-2">PROD-002</td>
+                              <td className="border border-gray-300 px-4 py-2">Standard Product</td>
+                              <td className="border border-gray-300 px-4 py-2 text-center">1</td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">$30.00</td>
+                              <td className="border border-gray-300 px-4 py-2 text-right">$30.00</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-6">
+                      <div className="grid grid-cols-2 gap-4 max-w-xs ml-auto">
+                        <div className="text-right font-medium">Subtotal:</div>
+                        <div className="text-right">$130.00</div>
+                        
+                        <div className="text-right font-medium">Tax:</div>
+                        <div className="text-right">$10.40</div>
+                        
+                        <div className="text-right font-medium">Discount:</div>
+                        <div className="text-right">$5.00</div>
+                        
+                        <div className="text-right font-bold text-lg mt-2">Total:</div>
+                        <div className="text-right font-bold text-lg mt-2">$135.40</div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-6">
+                      <h3 className="font-bold text-gray-700 mb-2">Special Instructions:</h3>
+                      <div className="text-gray-700">Please deliver to back entrance. Contact customer before delivery.</div>
+                    </div>
+                    
+                    <div className="pt-8 text-center border-t">
+                      <div className="text-sm text-gray-600">Signature: _________________________</div>
+                      <div className="mt-1 text-sm text-gray-600">Date: 12/3/2025</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === "contract-preview" ? (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Contract Preview</h3>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setActiveTab("manage")}>
+                      Back to Templates
+                    </Button>
+                    <Button onClick={() => handlePrintPreview(currentTemplate?.id || '')}>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print
+                    </Button>
+                    <Button onClick={() => {
+                      // Download functionality would go here
+                      alert('Download functionality would be implemented here');
+                    }}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="border rounded-lg p-6 max-w-4xl mx-auto bg-white">
+                  <div className="space-y-6">
+                    <div className="text-center border-b pb-4">
+                      <h1 className="text-3xl font-bold text-gray-800">CONTRACT AGREEMENT</h1>
+                      <div className="mt-2 text-lg font-semibold">Contract #CT-2024-001</div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <div className="text-sm text-gray-600">Date: 12/3/2025</div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <p className="text-gray-700">
+                        This Agreement is made between <span className="font-semibold">ABC Corporation</span> and <span className="font-semibold">XYZ Services</span>.
+                      </p>
+                    </div>
+                    
+                    <div className="pt-6">
+                      <h3 className="font-bold text-gray-700 mb-3">1. Services/Products:</h3>
+                      <div className="text-gray-700">
+                        Provision of consulting services for business optimization, including analysis, recommendations, 
+                        and implementation support for a period of 12 months. The services include monthly reporting 
+                        and quarterly reviews.
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <h3 className="font-bold text-gray-700 mb-3">2. Terms:</h3>
+                      <div className="text-gray-700">
+                        The contract period is 12 months starting from the date of signing. Either party may 
+                        terminate with 30 days written notice. All work performed will be according to industry standards.
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <h3 className="font-bold text-gray-700 mb-3">3. Payment:</h3>
+                      <div className="text-gray-700">
+                        Payment terms are Net 30. Total contract value is $50,000, payable in quarterly installments 
+                        of $12,500. Any additional services will be billed separately at agreed rates.
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <h3 className="font-bold text-gray-700 mb-3">4. Duration:</h3>
+                      <div className="text-gray-700">
+                        Contract duration: 12 months from 12/3/2025 to 12/3/2026. Automatic renewal for 
+                        additional 6-month periods unless terminated by either party with 30 days notice.
+                      </div>
+                    </div>
+                    
+                    <div className="pt-8">
+                      <h3 className="font-bold text-gray-700 mb-4">Signatures:</h3>
+                      <div className="grid grid-cols-2 gap-8">
+                        <div className="text-center">
+                          <div className="border-b border-gray-500 pb-8 mb-2">_________________________</div>
+                          <div className="font-semibold">ABC Corporation</div>
+                          <div className="text-sm text-gray-600 mt-1">Date: 12/3/2025</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="border-b border-gray-500 pb-8 mb-2">_________________________</div>
+                          <div className="font-semibold">XYZ Services</div>
+                          <div className="text-sm text-gray-600 mt-1">Date: 12/3/2025</div>
                         </div>
                       </div>
                     </div>

@@ -5,33 +5,88 @@ export const InvoiceTemplate: Template = {
   name: "Invoice Template",
   type: "invoice",
   description: "Professional invoice template for billing",
-  content: `INVOICE
-Invoice #[INVOICE_NUMBER]
-Date: [DATE]
-Due Date: [DUE_DATE]
-
-From:
-[BUSINESS_NAME]
-[BUSINESS_ADDRESS]
-[BUSINESS_PHONE]
-
-To:
-[CUSTOMER_NAME]
-[CUSTOMER_ADDRESS]
-[CUSTOMER_PHONE]
-
-Items:
-[ITEM_LIST]
-
-Subtotal: [SUBTOTAL]
-Tax: [TAX]
-Discount: [DISCOUNT]
-Total: [TOTAL]
-
-Terms:
-Payment due within 30 days
-
-Thank you for your business!`,
-  lastModified: "2023-08-15",
-  isActive: false
+  content: `<!DOCTYPE html>
+<html>
+<head>
+  <title>Invoice</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .invoice-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .customer-info { margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .totals { text-align: right; margin-top: 20px; }
+    .signature { margin-top: 40px; display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>INVOICE</h1>
+    <p>Invoice #: [INVOICE_NUMBER]</p>
+    <p>Date: [DATE]</p>
+    <p>Due Date: [DUE_DATE]</p>
+  </div>
+  
+  <div class="invoice-info">
+    <div>
+      <h3>From:</h3>
+      <p>[BUSINESS_NAME]</p>
+      <p>[BUSINESS_ADDRESS]</p>
+      <p>[BUSINESS_PHONE]</p>
+    </div>
+    <div>
+      <h3>To:</h3>
+      <p>[CUSTOMER_NAME]</p>
+      <p>[CUSTOMER_ADDRESS]</p>
+      <p>[CUSTOMER_PHONE]</p>
+    </div>
+  </div>
+  
+  <div class="customer-info">
+    <p><strong>Payment Terms:</strong> Due on Receipt</p>
+    <p><strong>Due Date:</strong> [DUE_DATE]</p>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Quantity</th>
+        <th>Price</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      [ITEM_LIST]
+    </tbody>
+  </table>
+  
+  <div class="totals">
+    <p><strong>Subtotal:</strong> [SUBTOTAL]</p>
+    <p><strong>Tax:</strong> [TAX]</p>
+    <p><strong>Discount:</strong> [DISCOUNT]</p>
+    <p><strong>Total:</strong> [TOTAL]</p>
+  </div>
+  
+  <div class="signature">
+    <div>
+      <p>_________________________________</p>
+      <p>Authorized Signature</p>
+    </div>
+    <div>
+      <p>_________________________________</p>
+      <p>Customer Signature</p>
+    </div>
+  </div>
+  
+  <div style="margin-top: 30px; text-align: center; font-size: 0.8em; color: #666;">
+    <p>Thank you for your business!</p>
+    <p>This is a computer-generated invoice and is valid without signature.</p>
+  </div>
+</body>
+</html>`,
+  lastModified: "2025-12-24",
+  isActive: true
 };

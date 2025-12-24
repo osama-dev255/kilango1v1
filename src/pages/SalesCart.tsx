@@ -14,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currency";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { AutomationService } from "@/services/automationService";
-import { PrintUtils } from "@/utils/printUtils";
+import { PrintUtils } from '@/utils/printUtils';
+import { generateCustomInvoice, getInvoiceTemplateConfig } from '@/utils/templateUtils';
 import WhatsAppUtils from "@/utils/whatsappUtils";
 // Import Supabase database service
 import { getProducts, getCustomers, updateProductStock, createCustomer, createSale, createSaleItem, createDebt, Product, Customer as DatabaseCustomer } from "@/services/databaseService";
@@ -275,115 +276,35 @@ export const SalesCart = ({ username, onBack, onLogout }: SalesCartProps) => {
     const discountAmount = discountValue ? (discountType === "percentage" ? subtotal * (parseFloat(discountValue) / 100) : parseFloat(discountValue)) : 0;
     const total = subtotal - discountAmount;
     
-    // Create invoice HTML
-    const invoiceHTML = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Invoice</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; margin-bottom: 20px; }
-          .invoice-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
-          .customer-info { margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; }
-          .totals { text-align: right; margin-top: 20px; }
-          .signature { margin-top: 40px; display: flex; justify-content: space-between; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>INVOICE</h1>
-          <p>Invoice #: INV-${Date.now()}</p>
-          <p>Date: ${new Date().toLocaleDateString()}</p>
-        </div>
-        
-        <div class="invoice-info">
-          <div>
-            <h3>From:</h3>
-            <p>${username}</p>
-          </div>
-          <div>
-            <h3>To:</h3>
-            <p>${selectedCustomer?.name || 'Walk-in Customer'}</p>
-            <p>${selectedCustomer?.email || ''}</p>
-            <p>${selectedCustomer?.phone || ''}</p>
-          </div>
-        </div>
-        
-        <div class="customer-info">
-          <p><strong>Payment Terms:</strong> Due on Receipt</p>
-          <p><strong>Due Date:</strong> ${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</p>
-        </div>
-        
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Quantity</th>
-              <th>Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${cart.map(item => `
-              <tr>
-                <td>${item.name}</td>
-                <td>${item.quantity}</td>
-                <td>${formatCurrency(item.price)}</td>
-                <td>${formatCurrency(item.price * item.quantity)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div class="totals">
-          <p><strong>Subtotal:</strong> ${formatCurrency(subtotal)}</p>
-          ${discountAmount > 0 ? `<p><strong>Discount (${discountType === 'percentage' ? discountValue + '%' : formatCurrency(parseFloat(discountValue))}):</strong> -${formatCurrency(discountAmount)}</p>` : ''}
-          <p><strong>Total:</strong> ${formatCurrency(total)}</p>
-        </div>
-        
-        <div class="signature">
-          <div>
-            <p>_________________________________</p>
-            <p>Authorized Signature</p>
-          </div>
-          <div>
-            <p>_________________________________</p>
-            <p>Customer Signature</p>
-          </div>
-        </div>
-        
-        <div style="margin-top: 30px; text-align: center; font-size: 0.8em; color: #666;">
-          <p>Thank you for your business!</p>
-          <p>This is a computer-generated invoice and is valid without signature.</p>
-        </div>
-      </body>
-      </html>
-    `;
+    // Create a transaction object for the invoice
+    const transaction = {
+      id: Date.now().toString(),
+      receiptNumber: `INV-${Date.now()}`,
+      date: new Date().toISOString(),
+      items: cart,
+      subtotal: subtotal,
+      tax: tax, // Display only tax (18%)
+      discount: discountAmount,
+      total: total,
+      paymentMethod: paymentMethod,
+      amountReceived: parseFloat(amountReceived) || 0,
+      change: parseFloat(amountReceived) || 0,
+      customer: selectedCustomer // Include customer information
+    };
     
-    // Open invoice in a new window
-    const invoiceWindow = window.open('', '_blank', 'width=800,height=600');
-    if (invoiceWindow) {
-      invoiceWindow.document.write(invoiceHTML);
-      invoiceWindow.document.close();
-      
-      // Optionally clear the cart after invoice generation
-      setCart([]);
-      setDiscountValue('');
-      setSelectedCustomer(null);
-      
-      toast({
-        title: "Invoice Generated",
-        description: "Professional invoice has been displayed in a new window.",
-        variant: "success",
-      });
-    } else {
-      // Handle popup blocker
-      alert('Please allow popups to view the invoice');
-    }
+    // Print the invoice using the PrintUtils
+    PrintUtils.printInvoice(transaction);
+    
+    // Optionally clear the cart after invoice generation
+    setCart([]);
+    setDiscountValue('');
+    setSelectedCustomer(null);
+    
+    toast({
+      title: "Invoice Generated",
+      description: "Professional invoice has been displayed in a new window.",
+      variant: "success",
+    });
   };
 
   const handleProcessPayment = () => {
