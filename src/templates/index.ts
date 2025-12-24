@@ -10,3 +10,4 @@ export * from './ReportTemplate';
 export * from './SalarySlipTemplate';
 export * from './ComplimentaryGoodsTemplate';
 export * from './ExpenseVoucherTemplate';
+export * from './EditableInvoiceTemplate';

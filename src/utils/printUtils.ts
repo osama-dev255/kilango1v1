@@ -1,4 +1,4 @@
-import { getTemplateConfig, generateCustomReceipt, getPurchaseTemplateConfig, generateCustomPurchaseReceipt, getInvoiceTemplateConfig, generateCustomInvoice } from '@/utils/templateUtils';
+import { getTemplateConfig, generateCustomReceipt, getPurchaseTemplateConfig, generateCustomPurchaseReceipt, getInvoiceTemplateConfig, generateCustomInvoice, replaceInvoicePlaceholders } from '@/utils/templateUtils';
 
 // Remove the dynamic import approach and use a CDN-based solution instead
 // This avoids build-time dependency resolution issues with Vite/Rollup

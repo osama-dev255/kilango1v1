@@ -34,13 +34,16 @@ export const InvoiceTemplate: Template = {
       <h3>From:</h3>
       <p>[BUSINESS_NAME]</p>
       <p>[BUSINESS_ADDRESS]</p>
-      <p>[BUSINESS_PHONE]</p>
+      <p>Phone: [BUSINESS_PHONE]</p>
+      <p>Email: [BUSINESS_EMAIL]</p>
     </div>
     <div>
       <h3>To:</h3>
       <p>[CUSTOMER_NAME]</p>
       <p>[CUSTOMER_ADDRESS]</p>
-      <p>[CUSTOMER_PHONE]</p>
+      <p>[CUSTOMER_CITY_STATE_ZIP]</p>
+      <p>Phone: [CUSTOMER_PHONE]</p>
+      <p>Email: [CUSTOMER_EMAIL]</p>
     </div>
   </div>
   
@@ -52,10 +55,13 @@ export const InvoiceTemplate: Template = {
   <table>
     <thead>
       <tr>
-        <th>Item</th>
+        <th>ID</th>
+        <th>Description</th>
         <th>Quantity</th>
+        <th>Unit</th>
         <th>Price</th>
-        <th>Total</th>
+        <th>Amount</th>
+        <th>Discount</th>
       </tr>
     </thead>
     <tbody>
@@ -70,6 +76,16 @@ export const InvoiceTemplate: Template = {
     <p><strong>Total:</strong> [TOTAL]</p>
   </div>
   
+  <div>
+    <p><strong>NOTES:</strong></p>
+    <p>[NOTES]</p>
+  </div>
+  
+  <div>
+    <p><strong>PAYMENT OPTIONS:</strong></p>
+    <p>[PAYMENT_OPTIONS]</p>
+  </div>
+  
   <div class="signature">
     <div>
       <p>_________________________________</p>
@@ -82,8 +98,9 @@ export const InvoiceTemplate: Template = {
   </div>
   
   <div style="margin-top: 30px; text-align: center; font-size: 0.8em; color: #666;">
-    <p>Thank you for your business!</p>
-    <p>This is a computer-generated invoice and is valid without signature.</p>
+    <p>[THANK_YOU_MESSAGE]</p>
+    <p>[PAYMENT_TERMS_MESSAGE]</p>
+    <p>Please make checks payable to [BUSINESS_NAME]</p>
   </div>
 </body>
 </html>`,

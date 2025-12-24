@@ -43,7 +43,8 @@ import { Template, DeliveryNoteItem, DeliveryNoteData,
   ReportTemplate,
   SalarySlipTemplate,
   ComplimentaryGoodsTemplate,
-  ExpenseVoucherTemplate
+  ExpenseVoucherTemplate,
+  EditableInvoiceTemplate
 } from "@/templates";
 import { saveDeliveryNote, getProducts, Product } from "@/services/databaseService";
 
@@ -2123,12 +2124,15 @@ export const Templates = ({ onBack }: TemplatesProps) => {
             ) : activeTab === "invoice-preview" ? (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Invoice Preview</h3>
+                  <h3 className="text-lg font-medium">Invoice Template</h3>
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => setActiveTab("manage")}>
                       Back to Templates
                     </Button>
-                    <Button onClick={() => handlePrintPreview(currentTemplate?.id || '')}>
+                    <Button onClick={() => {
+                      // Print functionality would go here
+                      alert('Print functionality would be implemented here');
+                    }}>
                       <Printer className="h-4 w-4 mr-2" />
                       Print
                     </Button>
@@ -2142,149 +2146,7 @@ export const Templates = ({ onBack }: TemplatesProps) => {
                   </div>
                 </div>
                 
-                <div className="border rounded-lg p-6 max-w-4xl mx-auto bg-white">
-                  <div className="space-y-6">
-                    {/* Invoice Header */}
-                    <div className="text-center border-b pb-4">
-                      <h1 className="text-3xl font-bold text-gray-800">INVOICE</h1>
-                      <div className="mt-2 text-lg font-semibold">INV-2024-001</div>
-                    </div>
-                    
-                    {/* Business and Client Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                      <div>
-                        <h3 className="font-bold text-gray-700 uppercase tracking-wide">FROM:</h3>
-                        <div className="mt-2">
-                          <div className="font-semibold">Your Business Name</div>
-                          <div>123 Business Street</div>
-                          <div>Phone: (555) 123-4567</div>
-                          <div>Email: billing@yourbusiness.com</div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-bold text-gray-700 uppercase tracking-wide">BILL TO:</h3>
-                        <div className="mt-2">
-                          <div className="font-semibold">Client Company Name</div>
-                          <div>456 Client Avenue</div>
-                          <div>Client City, State 67890</div>
-                          <div>Phone: (555) 987-6543</div>
-                          <div>Email: accounts@clientcompany.com</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Invoice Dates */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-                      <div>
-                        <div className="text-sm text-gray-600">INVOICE DATE</div>
-                        <div className="font-medium">12/3/2025</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-600">DUE DATE</div>
-                        <div className="font-medium">1/2/2026</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-600">AMOUNT DUE</div>
-                        <div className="font-bold text-xl">TZS 2,395.84</div>
-                      </div>
-                    </div>
-                    
-                    {/* Terms */}
-                    <div className="pt-2">
-                      <div className="text-sm text-gray-600">TERMS</div>
-                      <div className="font-medium">Net 30</div>
-                    </div>
-                    
-                    {/* Items Table */}
-                    <div className="pt-4">
-                      <h3 className="font-bold text-gray-700 uppercase tracking-wide mb-2">SERVICES RENDERED:</h3>
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse border border-gray-300">
-                          <thead>
-                            <tr className="bg-gray-100">
-                              <th className="border border-gray-300 px-4 py-2 text-left">Item</th>
-                              <th className="border border-gray-300 px-4 py-2 text-left">Description</th>
-                              <th className="border border-gray-300 px-4 py-2 text-center">Quantity</th>
-                              <th className="border border-gray-300 px-4 py-2 text-left">Unit</th>
-                              <th className="border border-gray-300 px-4 py-2 text-right">Rate</th>
-                              <th className="border border-gray-300 px-4 py-2 text-right">Amount</th>
-                              <th className="border border-gray-300 px-4 py-2 text-center">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="border border-gray-300 px-4 py-2">001</td>
-                              <td className="border border-gray-300 px-4 py-2">Website Design & Development</td>
-                              <td className="border border-gray-300 px-4 py-2 text-center">1</td>
-                              <td className="border border-gray-300 px-4 py-2">Project</td>
-                              <td className="border border-gray-300 px-4 py-2 text-right">1800</td>
-                              <td className="border border-gray-300 px-4 py-2 text-right">1,800.00</td>
-                              <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                            </tr>
-                            <tr>
-                              <td className="border border-gray-300 px-4 py-2">002</td>
-                              <td className="border border-gray-300 px-4 py-2">Monthly Support (3 months)</td>
-                              <td className="border border-gray-300 px-4 py-2 text-center">3</td>
-                              <td className="border border-gray-300 px-4 py-2">Months</td>
-                              <td className="border border-gray-300 px-4 py-2 text-right">150</td>
-                              <td className="border border-gray-300 px-4 py-2 text-right">450.00</td>
-                              <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      
-                      <div className="flex justify-end mt-2">
-                        <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 border border-blue-600 rounded-md text-sm font-medium">
-                          Add Item
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* Notes */}
-                    <div className="pt-4">
-                      <h3 className="font-bold text-gray-700 uppercase tracking-wide mb-2">NOTES:</h3>
-                      <div className="text-gray-700">Thank you for your business! Payment due within 30 days.</div>
-                    </div>
-                    
-                    {/* Payment Options */}
-                    <div className="pt-2">
-                      <h3 className="font-bold text-gray-700 uppercase tracking-wide mb-2">PAYMENT OPTIONS:</h3>
-                      <div className="text-gray-700">Bank Transfer, Check, or Credit Card</div>
-                    </div>
-                    
-                    {/* Totals */}
-                    <div className="pt-4 border-t">
-                      <div className="grid grid-cols-2 gap-4 max-w-xs ml-auto">
-                        <div className="text-right font-medium">Subtotal:</div>
-                        <div className="text-right">TZS 2,250.00</div>
-                        
-                        <div className="text-right font-medium">Discount:</div>
-                        <div className="text-right">50</div>
-                        
-                        <div className="text-right font-medium">Tax:</div>
-                        <div className="text-right">195.84</div>
-                        
-                        <div className="text-right font-bold text-lg mt-2">TOTAL:</div>
-                        <div className="text-right font-bold text-lg mt-2">TZS 2,395.84</div>
-                        
-                        <div className="text-right font-medium mt-2">Amount Paid:</div>
-                        <div className="text-right mt-2">0</div>
-                        
-                        <div className="text-right font-bold text-xl mt-2">AMOUNT DUE:</div>
-                        <div className="text-right font-bold text-xl mt-2">TZS 2,395.84</div>
-                      </div>
-                    </div>
-                    
-                    {/* Footer */}
-                    <div className="pt-8 text-center text-gray-600 text-sm">
-                      <div>Thank you for your business! Payment due within 30 days.</div>
-                      <div className="mt-2">Please make checks payable to</div>
-                      <div className="font-semibold mt-1">Your Business Name</div>
-                    </div>
-                  </div>
-                </div>
+                <EditableInvoiceTemplate />
               </div>
             ) : activeTab === "order-form-preview" ? (
               <div className="space-y-6">

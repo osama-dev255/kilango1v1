@@ -336,6 +336,41 @@ export const generateCustomReceipt = (transaction: any, config: ReceiptTemplateC
   `;
 };
 
+// Function to replace placeholders in invoice template with actual data
+export const replaceInvoicePlaceholders = (template: string, data: any) => {
+  return template
+    .replace(/\[INVOICE_NUMBER\]/g, data.invoiceNumber || '')
+    .replace(/\[DATE\]/g, data.date || new Date().toLocaleDateString())
+    .replace(/\[DUE_DATE\]/g, data.dueDate || '')
+    .replace(/\[BUSINESS_NAME\]/g, data.businessName || '')
+    .replace(/\[BUSINESS_ADDRESS\]/g, data.businessAddress || '')
+    .replace(/\[BUSINESS_PHONE\]/g, data.businessPhone || '')
+    .replace(/\[BUSINESS_EMAIL\]/g, data.businessEmail || '')
+    .replace(/\[CUSTOMER_NAME\]/g, data.clientName || '')
+    .replace(/\[CUSTOMER_ADDRESS\]/g, data.clientAddress || '')
+    .replace(/\[CUSTOMER_CITY_STATE_ZIP\]/g, data.clientCityStateZip || '')
+    .replace(/\[CUSTOMER_PHONE\]/g, data.clientPhone || '')
+    .replace(/\[CUSTOMER_EMAIL\]/g, data.clientEmail || '')
+    .replace(/\[SUBTOTAL\]/g, data.subtotal?.toFixed(2) || '0.00')
+    .replace(/\[TAX\]/g, data.tax?.toFixed(2) || '0.00')
+    .replace(/\[DISCOUNT\]/g, data.discount?.toFixed(2) || '0.00')
+    .replace(/\[TOTAL\]/g, data.total?.toFixed(2) || '0.00')
+    .replace(/\[NOTES\]/g, data.notes || '')
+    .replace(/\[PAYMENT_OPTIONS\]/g, data.paymentOptions || '')
+    .replace(/\[THANK_YOU_MESSAGE\]/g, data.thankYouMessage || '')
+    .replace(/\[PAYMENT_TERMS_MESSAGE\]/g, data.paymentTermsMessage || '')
+    .replace(/\[ITEM_LIST\]/g, data.items?.map((item: any) => `
+        <tr>
+          <td>${item.id}</td>
+          <td>${item.description}</td>
+          <td>${item.quantity}</td>
+          <td>${item.unit}</td>
+          <td>${item.price}</td>
+          <td>${item.amount}</td>
+          <td>${item.discount}</td>
+        </tr>`).join('') || '');
+};
+
 // Invoice template configuration interface
 export interface InvoiceTemplateConfig {
   customTemplate: boolean;
